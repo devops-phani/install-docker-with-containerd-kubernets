@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: docker
+  namespace: default
+  labels:
+    app: docker
+spec:
+  selector:
+    matchLabels:
+      name: docker
+  template:
+    metadata:
+      labels:
+        name: docker
+    spec:
+      containers:
+      - command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -l
+        image: docker.io/library/alpine
+        imagePullPolicy: Always
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "apt-get update && apt-get install moby-engine moby-cli -y && docker info > /tmp/post-start.log"]
+        name: docker
+        securityContext:
+          privileged: true
+        stdin: true
+        tty: true
+      hostNetwork: true
+      hostPID: true
